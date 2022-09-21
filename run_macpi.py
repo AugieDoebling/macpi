@@ -24,9 +24,9 @@ try:
     epd.init()
     epd.Clear()
 
-    font96 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 96)
-    font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
-    font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
+    font96 = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), 96)
+    font24 = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), 24)
+    font18 = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), 18)
 
     Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
