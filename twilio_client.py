@@ -8,8 +8,8 @@ cache_filename = './lastmessage.json'
 time_format = "%m/%d %H:%M"
 
 def retreive_last_twilio_message():
-    account_sid = "AC116053f41124e2175f9e3d5392dc025f"
-    auth_token = "af8c3e1b1a2165ef372770d7621a744f"
+    account_sid = ""
+    auth_token = ""
     client = Client(account_sid, auth_token)
 
     messages = client.messages.list(limit=20, to='+18456134979')
