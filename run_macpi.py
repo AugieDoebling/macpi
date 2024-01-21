@@ -13,84 +13,100 @@ import epd7in5_V2
 import time
 from PIL import Image,ImageDraw,ImageFont
 import traceback
+from datetime import datetime
+from twilio_client import get_latest_message
+from friends import get_friend_name
 
 logging.basicConfig(level=logging.DEBUG)
 
-try:
-    logging.info("epd7in5_V2 Demo")
-    epd = epd7in5_V2.EPD()
-    
-    logging.info("init and Clear")
-    epd.init()
-    epd.Clear()
+white = 255
+black = 0
 
-    font96 = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), 96)
-    font24 = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), 24)
-    font18 = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), 18)
+font_sizes = [96, 64, 48, 24, 18]
 
-    Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
-    draw = ImageDraw.Draw(Himage)
-    draw.text((10, 0), 'Gabby > Rachel', font = font96, fill = 0)
+fonts = {}
+characters_per_line_for_font = {
+    96 : 14,
+    64 : 22,
+    48 : 32,
+    24 : 14,
+    18 : 14,
+}
 
-    # Drawing on the Horizontal image
-    # logging.info("1.Drawing on the Horizontal image...")
-    # Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
-    # draw = ImageDraw.Draw(Himage)
-    # draw.text((10, 0), 'hello world', font = font24, fill = 0)
-    # draw.text((10, 20), '7.5inch e-Paper', font = font24, fill = 0)
-    # draw.text((150, 0), u'微雪电子', font = font24, fill = 0)
-    # draw.line((20, 50, 70, 100), fill = 0)
-    # draw.line((70, 50, 20, 100), fill = 0)
-    # draw.rectangle((20, 50, 70, 100), outline = 0)
-    # draw.line((165, 50, 165, 100), fill = 0)
-    # draw.line((140, 75, 190, 75), fill = 0)
-    # draw.arc((140, 50, 190, 100), 0, 360, fill = 0)
-    # draw.rectangle((80, 50, 130, 100), fill = 0)
-    # draw.chord((200, 50, 250, 100), 0, 360, fill = 0)
-    # epd.display(epd.getbuffer(Himage))
-    # time.sleep(2)
+def load_fonts():
+    for size in font_sizes:
+        fonts[size] = ImageFont.truetype(os.path.join('fonts', 'default.ttc'), size)
 
-    # # Drawing on the Vertical image
-    # logging.info("2.Drawing on the Vertical image...")
-    # Limage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
-    # draw = ImageDraw.Draw(Limage)
-    # draw.text((2, 0), 'hello world', font = font18, fill = 0)
-    # draw.text((2, 20), '7.5inch epd', font = font18, fill = 0)
-    # draw.text((20, 50), u'微雪电子', font = font18, fill = 0)
-    # draw.line((10, 90, 60, 140), fill = 0)
-    # draw.line((60, 90, 10, 140), fill = 0)
-    # draw.rectangle((10, 90, 60, 140), outline = 0)
-    # draw.line((95, 90, 95, 140), fill = 0)
-    # draw.line((70, 115, 120, 115), fill = 0)
-    # draw.arc((70, 90, 120, 140), 0, 360, fill = 0)
-    # draw.rectangle((10, 150, 60, 200), fill = 0)
-    # draw.chord((70, 150, 120, 200), 0, 360, fill = 0)
-    # epd.display(epd.getbuffer(Limage))
-    # time.sleep(2)
+def break_message(message, font=0):
+    font_size = font_sizes[font]
+    max_length = characters_per_line_for_font[font_size]
+    broken = ''
+    lines = 0
+    index = 0
+    if ' ' not in message:
+        return (message, font_size)
+    while index < len(message) - max_length:
+        next_index = message.rindex(' ', index, index+max_length)
+        if index == next_index:
+            next_index = message.index(' ', index+max_length)
+        line = message[index:next_index].strip()
+        broken += (line+'\n')
+        lines += 1
+        index = next_index
+        if 3 < lines:
+            return break_message(message, font+1)
+    broken += message[index:]
+    return (broken, font_size)
 
-    # logging.info("3.read bmp file")
-    # Himage = Image.open(os.path.join(picdir, '7in5_V2.bmp'))
-    # epd.display(epd.getbuffer(Himage))
-    # time.sleep(2)
+def update_message():
+    try:
+        is_new, message = get_latest_message()
+        # if no new message, dont write display
+        if not is_new:
+            return
 
-    # logging.info("4.read bmp file on window")
-    # Himage2 = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
-    # bmp = Image.open(os.path.join(picdir, '100x100.bmp'))
-    # Himage2.paste(bmp, (50,10))
-    # epd.display(epd.getbuffer(Himage2))
-    # time.sleep(2)
+        body, body_font_size = break_message(message['body'])
+        sender = get_friend_name(message['from'])
 
-    # logging.info("Clear...")
-    # epd.init()
-    # epd.Clear()
+        logging.info("epd7in5_V2 Demo")
+        epd = epd7in5_V2.EPD()
+        
+        logging.info("init and Clear")
+        epd.init()
+        epd.Clear()
 
-    logging.info("Goto Sleep...")
-    epd.sleep()
-    
-except IOError as e:
-    logging.info(e)
-    
-except KeyboardInterrupt:    
-    logging.info("ctrl + c:")
-    epd7in5_V2.epdconfig.module_exit()
-    exit()
+        load_fonts()
+
+        Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
+        draw = ImageDraw.Draw(Himage)
+
+        # main message
+        draw.multiline_text((400, 230), body, font=fonts[body_font_size], fill=black, anchor='mm', align='center')
+
+        # header - number to text
+        draw.rectangle((150, 0, 650, 30), fill=black)
+        draw.text((400, 15), 'Text Your Message to: (845) 613-4979', font=fonts[18], fill='white', anchor='mm')
+
+        # footer
+        draw.line((0, 430, 800, 430), fill=black, width=2)
+        draw.line((400, 430, 400, 480), fill=black, width=2)
+        # from
+        draw.text((600, 455), 'From: '+sender, font=fonts[24], fill=black, anchor='mm')
+        draw.text((200, 455), 'At: '+message['date_sent'], font=fonts[24], fill=black, anchor='mm')
+        
+        epd.display(epd.getbuffer(Himage))
+
+        logging.info("Goto Sleep...")
+        epd.sleep()
+        
+    except IOError as e:
+        logging.info(e)
+        
+    except KeyboardInterrupt:    
+        logging.info("ctrl + c:")
+        epd7in5_V2.epdconfig.module_exit()
+        exit()
+
+if __name__ == "__main__":
+   update_message()
+
