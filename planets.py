@@ -5,6 +5,7 @@ from pytz import timezone
 import requests
 import json
 import math
+import re
 
 ts = load.timescale()
 eph = load('de421.bsp')
@@ -169,6 +170,53 @@ def get_cloud_cover_for_tonight():
    return tonight_forcast['value']
 
    # print(cloud_cover_data)
+
+def get_sunset():
+   times, events = almanac.find_discrete(start_time, end_time, almanac.sunrise_sunset(eph, slo))
+   # event is 1 for sunrise, 0 for sunset
+   sunsets = [time for time, event in zip(times, events) if event == 0]
+   if len(sunsets) == 0:
+      return None
+   return sunsets[0].astimezone(tz)
+
+def get_moon_phase_tonight():
+   # phase angle in degrees at 10pm today: 0 new, 90 first quarter, 180 full, 270 last quarter
+   ten_pm = now.replace(hour=22, minute=0, second=0, microsecond=0)
+   return almanac.moon_phase(eph, ts.from_datetime(ten_pm)).degrees
+
+def parse_valid_time(valid_time):
+   # weather.gov intervals look like '2026-10-12T15:00:00+00:00/PT13H' or '.../P6DT12H'
+   start_text, duration_text = valid_time.split('/')
+   start = dt.datetime.fromisoformat(start_text)
+   match = re.fullmatch(r'P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?', duration_text)
+   days, hours, minutes = [int(group or 0) for group in match.groups()]
+   return (start, start + dt.timedelta(days=days, hours=hours, minutes=minutes))
+
+def get_values_for_today(forecast_values):
+   values = []
+   for forecast in forecast_values:
+      start, end = parse_valid_time(forecast['validTime'])
+      if start < midnight_tomorrow and midnight_today < end and forecast['value'] is not None:
+         values.append(forecast['value'])
+   return values
+
+def celsius_to_fahrenheit(celsius):
+   return celsius * 9 / 5 + 32
+
+def get_weather_today():
+   # high / low in fahrenheit and chance of rain in percent, None for anything missing from the forecast
+   weather_page = requests.get('https://api.weather.gov/gridpoints/LOX/77,115')
+   properties = json.loads(weather_page.text)['properties']
+
+   highs = get_values_for_today(properties['maxTemperature']['values'])
+   lows = get_values_for_today(properties['minTemperature']['values'])
+   rain_chances = get_values_for_today(properties['probabilityOfPrecipitation']['values'])
+
+   return {
+      'high': round(celsius_to_fahrenheit(max(highs))) if highs else None,
+      'low': round(celsius_to_fahrenheit(min(lows))) if lows else None,
+      'rain': round(max(rain_chances)) if rain_chances else None
+   }
 
 # get_cloud_cover_for_tonight()
 
