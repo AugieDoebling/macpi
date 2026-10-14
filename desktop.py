@@ -11,7 +11,8 @@ HEIGHT = 480
 white = 255
 black = 0
 
-menu_bar_height = 30
+menu_bar_height = 39
+menu_bar_font_size = 26
 title_bar_height = 24
 
 fonts = {}
@@ -148,11 +149,11 @@ def draw_menu_bar(draw, data):
    middle_y = menu_bar_height // 2
 
    date_text = '{} {}'.format(data['date'].strftime('%A, %B'), data['date'].day)
-   draw_text(draw, (16, middle_y), date_text, 20, anchor='lm', bold=True)
+   draw_text(draw, (16, middle_y), date_text, menu_bar_font_size, anchor='lm', bold=True)
 
    sunset_text = 'Sunset {}'.format(format_time(data['sunset']))
-   draw_text(draw, (WIDTH - 16, middle_y), sunset_text, 20, anchor='rm')
-   draw_sunset_icon(draw, WIDTH - 16 - draw.textlength(sunset_text, font=get_font(20)) - 30, middle_y + 2, 7)
+   draw_text(draw, (WIDTH - 16, middle_y), sunset_text, menu_bar_font_size, anchor='rm')
+   draw_sunset_icon(draw, WIDTH - 16 - draw.textlength(sunset_text, font=get_font(menu_bar_font_size)) - 34, middle_y + 2, 9)
 
 def draw_window(draw, box, title):
    # box is (left x, top y, right x, bottom y), returns the y of the bottom of the title bar
@@ -262,15 +263,15 @@ def draw_weather_window(draw, box, data):
    (left, top, right, bottom) = box
    content_top = draw_window(draw, box, 'Today')
    high = format_value(data['high'], '°')
-   low = format_value(data['low'], '°')
+   tonight_low = format_value(data['tonight_low'], '°')
    # 3 digit / negative temps need a smaller font to fit side by side
-   temp_size = 58 if max(len(high), len(low)) <= 3 else 44
-   low_x = left + 148
+   temp_size = 58 if max(len(high), len(tonight_low)) <= 3 else 44
+   tonight_x = left + 148
 
    draw_text(draw, (left + 18, content_top + 26), 'HIGH', 14, anchor='lm')
-   draw_text(draw, (low_x + 2, content_top + 26), 'LOW', 14, anchor='lm')
+   draw_text(draw, (tonight_x + 2, content_top + 26), 'TONIGHT', 14, anchor='lm')
    draw_text(draw, (left + 16, content_top + 72), high, temp_size, anchor='lm', bold=True)
-   draw_text(draw, (low_x, content_top + 72), low, temp_size, anchor='lm')
+   draw_text(draw, (tonight_x, content_top + 72), tonight_low, temp_size, anchor='lm')
 
    draw.line((left + 1, content_top + 116, right - 1, content_top + 116), fill=black)
    draw_raindrop(draw, left + 36, content_top + 144, 14)
@@ -282,7 +283,7 @@ def render_desktop(data):
    data = {
       'date': date or datetime,
       'sunset': datetime (or None),
-      'high': degrees F, 'low': degrees F, 'rain': percent (any can be None),
+      'high': degrees F, 'tonight_low': overnight low in degrees F, 'rain': percent (any can be None),
       'moon_degrees': skyfield moon phase angle at 10pm,
       'bodies': [{'name': 'Saturn', 'rise': datetime, 'set': datetime}, ...]
    }
@@ -291,8 +292,8 @@ def render_desktop(data):
    draw = ImageDraw.Draw(image)
 
    draw_menu_bar(draw, data)
-   draw_bodies_window(draw, (16, 46, 492, 462), data)
-   draw_moon_window(draw, (512, 46, 780, 236), data)
+   draw_bodies_window(draw, (16, 55, 492, 462), data)
+   draw_moon_window(draw, (512, 55, 780, 236), data)
    draw_weather_window(draw, (512, 256, 780, 462), data)
 
    return image

@@ -200,21 +200,30 @@ def get_values_for_today(forecast_values):
          values.append(forecast['value'])
    return values
 
+def get_tonight_lows(min_temperature_values):
+   # the overnight low is the forecast period that runs through midnight tonight (e.g. 8pm -> 10am)
+   values = []
+   for forecast in min_temperature_values:
+      start, end = parse_valid_time(forecast['validTime'])
+      if start <= midnight_tomorrow < end and forecast['value'] is not None:
+         values.append(forecast['value'])
+   return values
+
 def celsius_to_fahrenheit(celsius):
    return celsius * 9 / 5 + 32
 
 def get_weather_today():
-   # high / low in fahrenheit and chance of rain in percent, None for anything missing from the forecast
+   # high / tonight's low in fahrenheit and chance of rain in percent, None for anything missing from the forecast
    weather_page = requests.get('https://api.weather.gov/gridpoints/LOX/77,115')
    properties = json.loads(weather_page.text)['properties']
 
    highs = get_values_for_today(properties['maxTemperature']['values'])
-   lows = get_values_for_today(properties['minTemperature']['values'])
+   tonight_lows = get_tonight_lows(properties['minTemperature']['values'])
    rain_chances = get_values_for_today(properties['probabilityOfPrecipitation']['values'])
 
    return {
       'high': round(celsius_to_fahrenheit(max(highs))) if highs else None,
-      'low': round(celsius_to_fahrenheit(min(lows))) if lows else None,
+      'tonight_low': round(celsius_to_fahrenheit(tonight_lows[0])) if tonight_lows else None,
       'rain': round(max(rain_chances)) if rain_chances else None
    }
 

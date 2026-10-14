@@ -13,7 +13,7 @@ def get_weather():
    except Exception:
       # still worth showing the sky if the forecast is down
       logging.exception('could not load weather')
-      return {'high': None, 'low': None, 'rain': None}
+      return {'high': None, 'tonight_low': None, 'rain': None}
 
 def get_desktop_data():
    weather = get_weather()
@@ -23,7 +23,7 @@ def get_desktop_data():
       'date': now,
       'sunset': get_sunset(),
       'high': weather['high'],
-      'low': weather['low'],
+      'tonight_low': weather['tonight_low'],
       'rain': weather['rain'],
       'moon_degrees': get_moon_phase_tonight(),
       'bodies': [

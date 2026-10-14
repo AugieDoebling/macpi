@@ -32,7 +32,7 @@ def scenario(bodies, **overrides):
       'date': today,
       'sunset': at(18, 31),
       'high': 74,
-      'low': 52,
+      'tonight_low': 52,
       'rain': 10,
       'moon_degrees': 124, # waxing gibbous
       'bodies': [all_bodies[name] for name in bodies],
@@ -50,11 +50,11 @@ scenarios = {
    'nothing_visible': scenario([]),
    'new_moon': scenario(['Saturn', 'Jupiter', 'Mars'], moon_degrees=2),
    'first_quarter': scenario(['Saturn', 'Moon'], moon_degrees=90),
-   'full_moon_rainy': scenario(['Moon', 'Saturn'], moon_degrees=180, high=58, low=47, rain=100),
+   'full_moon_rainy': scenario(['Moon', 'Saturn'], moon_degrees=180, high=58, tonight_low=47, rain=100),
    'waning_crescent': scenario(['Saturn', 'Mars', 'Jupiter', 'Uranus'], moon_degrees=315),
-   'heat_wave': scenario(['Venus', 'Saturn', 'Mars'], high=108, low=71, rain=0),
-   'freezing': scenario(['Saturn', 'Jupiter'], high=28, low=-4, rain=35),
-   'weather_unavailable': scenario(['Saturn', 'Moon'], high=None, low=None, rain=None),
+   'heat_wave': scenario(['Venus', 'Saturn', 'Mars'], high=108, tonight_low=71, rain=0),
+   'freezing': scenario(['Saturn', 'Jupiter'], high=28, tonight_low=-4, rain=35),
+   'weather_unavailable': scenario(['Saturn', 'Moon'], high=None, tonight_low=None, rain=None),
    'long_date_late_sunset': scenario(['Venus', 'Mars'], date=dt.datetime(2026, 9, 30), sunset=dt.datetime(2026, 9, 30, 20, 22)),
 }
 
